@@ -14,58 +14,52 @@ tolstoi = Publisher(name="Толстой")
 lermontov = Publisher(name="Лермонтов")
 
 session.add_all([tolstoi, lermontov])
+session.commit()
 
-war_and_peace = Book(title="Война и Мир", id_publisher=tolstoi)
-childhood = Book(title="Детство", id_publisher=tolstoi)
-borodino = Book(title="Бородино", id_publisher=lermontov)
+war_and_peace = Book(title="Война и Мир", id_publisher=1)
+childhood = Book(title="Детство", id_publisher=1)
+borodino = Book(title="Бородино", id_publisher=2)
 
 session.add_all([war_and_peace, childhood, borodino])
 
 little_reader = Shop(name="Маленький Чтец")
 house_book = Shop(name="Дом Книга")
-
+#
 session.add_all([little_reader, house_book])
+session.commit()
 
-stock1 = Stock(id_book=childhood, id_shop=little_reader, count=12)
-stock2 = Stock(id_book=war_and_peace, id_shop=little_reader, count=8)
-stock3 = Stock(id_book=war_and_peace, id_shop=house_book, count=10)
-stock4 = Stock(id_book=childhood, id_shop=house_book, count=11)
-stock5 = Stock(id_book=borodino, id_shop=house_book, count=7)
-
+stock1 = Stock(id_book=2, id_shop=1, count=12)
+stock2 = Stock(id_book=1, id_shop=1, count=8)
+stock3 = Stock(id_book=1, id_shop=2, count=10)
+stock4 = Stock(id_book=2, id_shop=2, count=11)
+stock5 = Stock(id_book=3, id_shop=2, count=7)
+#
 session.add_all([stock1, stock2, stock3, stock4, stock5])
+session.commit()
 
-sale1 = Sale(price=450, date_sale="17-11-2023", id_stock=stock1, count=3)
-sale2 = Sale(price=670, date_sale="01-03-2023", id_stock=stock2, count=1)
-sale3 = Sale(price=630, date_sale="27-12-2023", id_stock=stock3, count=1)
-sale4 = Sale(price=490, date_sale="05-09-2023", id_stock=stock4, count=2)
-sale5 = Sale(price=520, date_sale="29-08-2021", id_stock=stock5, count=1)
+sale1 = Sale(price=450, date_sale="17-11-2023", id_stock=1, count=3)
+sale2 = Sale(price=670, date_sale="01-03-2023", id_stock=2, count=1)
+sale3 = Sale(price=630, date_sale="27-12-2023", id_stock=3, count=1)
+sale4 = Sale(price=490, date_sale="05-09-2023", id_stock=4, count=2)
+sale5 = Sale(price=520, date_sale="29-08-2021", id_stock=5, count=1)
 
 session.add_all([sale1, sale2, sale3, sale4, sale5])
 session.commit()
 
-# Выборка магазинов, продающих целевого издателя
-publisher_name = input("Введите имя издателя: ")
-publishers = session.query(Publisher).filter(Publisher.name.ilike(f"%{publisher_name}%")).all()
-if not publishers:
-    print("Издатель не найден")
-else:
-    for publisher in publishers:
-        sales_data = (session.query(
-            Book.title,
-            Shop.name,
-            Sale.price,
-            Sale.date_sale
-        ).select_from(Book)
-        .join(Stock)
-        .join(Shop)
-        .join(Sale)
-        .filter(Book.id_publisher == publisher.id).all())
+#Выборка магазинов, продающих целевого публициста
 
-        if not sales_data:
-            print("Нет данных о покупке данного издателя.")
-        else:
-            print("Название книги | Название магазина | Стоимость покупки | Дата покупки ")
-            for title, shop_name, price, date in sales_data:
-                print(f"{title}, {shop_name}, {price}, {date}")
+def get_shops(publisher_name):
+    query = session.query(Book.title, Shop.name, Sale.price, Sale.date_sale).select_from(Shop).join(Stock).join(Book).join(Publisher).join(Sale)
 
-session.close()
+    if publisher_name.isdigit():
+        result = query.filter(publisher_name == Publisher.id).all()
+    else:
+        result = query.filter(publisher_name == Publisher.name).all()
+
+    for title, shop_name, price, date_sale in result:
+        print(f'{title: <16} | {shop_name: <16} | {price: <8} | {date_sale.strftime('%d-%m-%Y')}')
+
+
+if __name__ == '__main__':
+    publisher_name = input('Введите ID или имя публициста: ')
+    get_shops(publisher_name)
